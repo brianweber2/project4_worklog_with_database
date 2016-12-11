@@ -25,6 +25,7 @@ Create a command line application that will allow employees to enter their name,
 ### Menu has a “quit” option to exit the program.
 
 ### Records can be deleted and edited, letting user change the date, task name, time spent, and/or notes.
+
 ### Can find entries based on a ranges of dates. For example between 01/01/2016 and 12/31/2016.
 
 ### If multiple employees share a name (e.g. multiple people with the first name Beth), a list of possible matches is given.

@@ -18,7 +18,6 @@ class Entry(Model):
     date = DateTimeField(default=datetime.datetime.now)
 
 
-
     # Tell the model which database to connect to
     class Meta:
         database = db
