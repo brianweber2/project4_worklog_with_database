@@ -85,7 +85,8 @@ def display_temp_entry(date, employee_name, task_name, minutes, notes):
     """Print task to user before writing to database."""
     clear_screen()
     print("Date: {}\nEmployee Name: {}\nTask Name: {}\nMinutes: {}\nNotes: {}"
-        "".format(date, employee_name, task_name, minutes, notes))
+        "".format(convert_datetime_to_string(date),
+            employee_name, task_name, minutes, notes))
 
 
 def add_entry():
@@ -115,20 +116,50 @@ def find_by_employee():
     """Search by an employee's name"""
     clear_screen()
     print("Search by Employee Name\n")
-    user_input = input("Enter an employee's name: ")
+    user_input = input("Enter an employee's name: ").strip()
     entries = Entry.select().order_by(Entry.date.desc()).where(
         Entry.employee_name.contains(user_input))
+    entries = check_employee_name_match(entries)
     clear_screen()
     if entries:
         display_entries(entries)
     else:
-        print("\nNo matches found for {}!".format(user_input))
+        print("No matches found for {}!".format(user_input))
         response = input("\nDo you want to search something else? Y/[n] ")
         if response.lower().strip() != 'y':
             menu_loop()
         else:
             clear_screen()
             search_entries()
+
+
+def check_employee_name_match(entries):
+    """
+    Check to see if there are multiple employee name matches. If so, provide
+    the matches and allow the user to select the name.
+    """
+    names = []
+    for entry in entries:
+        name = entry.employee_name.strip()
+        if name not in names:
+            names.append(name)
+    if len(names) > 1:
+        while True:
+            clear_screen()
+            print("Here are the employee names that match your search: \n")
+            for name in names:
+                print(name)
+            employee_name = input(
+                "\nWhich employee would you like to search? ").strip()
+            if employee_name in names:
+                entries = Entry.select().order_by(Entry.date.desc()).where(
+                    Entry.employee_name == employee_name)
+                return entries
+            else:
+                print("\n{} is not an employee's name given above!\n"
+                    "".format(employee_name))
+                input("Press ENTER to try again...")
+    return entries
 
 
 def find_by_date():
