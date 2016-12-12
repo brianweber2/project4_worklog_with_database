@@ -112,12 +112,27 @@ def add_entry():
 
 
 def find_by_employee():
-    """Find a previous work log entry by an employee's name."""
-    pass
+    """Search by an employee's name"""
+    clear_screen()
+    print("Search by Employee Name\n")
+    user_input = input("Enter an employee's name: ")
+    entries = Entry.select().order_by(Entry.date.desc()).where(
+        Entry.employee_name.contains(user_input))
+    clear_screen()
+    if entries:
+        display_entries(entries)
+    else:
+        print("\nNo matches found for {}!".format(user_input))
+        response = input("\nDo you want to search something else? Y/[n] ")
+        if response.lower().strip() != 'y':
+            menu_loop()
+        else:
+            clear_screen()
+            search_entries()
 
 
 def find_by_date():
-    """Find a previous work log entry by date"""
+    """Search by date"""
     clear_screen()
     # Select distinct dates from all entries
     dates = get_all_distinct_dates_list()
@@ -136,6 +151,37 @@ def find_by_date():
         display_entries(entries)
     else:
         print("\nNo matches found for {}!".format(user_input))
+        response = input("\nDo you want to search something else? Y/[n] ")
+        if response.lower().strip() != 'y':
+            menu_loop()
+        else:
+            clear_screen()
+            search_entries()
+
+
+def find_by_date_range():
+    """Search by date range"""
+    clear_screen()
+    print("Search by date range\n")
+    print("Start date")
+    start_date = get_date()
+    print("\nEnd date")
+    end_date = get_date()
+
+    if end_date < start_date:
+        input("\nStart date has to come before the end date! "
+            "Press ENTER to continue...")
+        find_by_date_range()
+
+    entries = Entry.select().order_by(Entry.date.desc()).where(
+        Entry.date >= start_date, Entry.date <= end_date)
+    clear_screen()
+    if entries:
+        display_entries(entries)
+    else:
+        print("No matches between {} and {}.".format(
+            convert_datetime_to_string(start_date),
+            convert_datetime_to_string(end_date)))
         response = input("\nDo you want to search something else? Y/[n] ")
         if response.lower().strip() != 'y':
             menu_loop()
@@ -178,8 +224,84 @@ def convert_string_to_datetime(date):
 
 
 def find_by_keyword():
-    """Find a previous work log entry by a search term"""
-    pass
+    """Search by keyword"""
+    clear_screen()
+    print("Search by Keyword\n")
+    user_input = input("Enter a search term: ")
+    entries = Entry.select().order_by(Entry.date.desc()).where(
+        Entry.task_name.contains(user_input)|Entry.notes.contains(user_input))
+    clear_screen()
+    if entries:
+        display_entries(entries)
+    else:
+        print("\nNo matches found for {}!".format(user_input))
+        response = input("\nDo you want to search something else? Y/[n] ")
+        if response.lower().strip() != 'y':
+            menu_loop()
+        else:
+            clear_screen()
+            search_entries()
+
+
+def edit_entry(index, entries):
+    """Edit an entry."""
+    entry = entries[index]
+    clear_screen()
+    print("Edit Entry\n")
+    display_entry(entry)
+    print("\n[T] - Task Name\n"
+          "[D] - Date\n"
+          "[S] - Time Spent\n"
+          "[N] - Notes")
+    user_input = input(
+        "\nChoose an option from above to edit: "
+        ).lower().strip()
+
+    while True:
+        clear_screen()
+        if user_input == 't':
+            entry.task_name = get_task_name()
+        elif user_input == 'd':
+            entry.date = get_date()
+        elif user_input == 's':
+            entry.minutes = get_time_spent()
+        elif user_input == 'n':
+            entry.notes = get_notes()
+        else:
+            input("\n{} is not a valid command! Please try again."
+                "".format(user_input))
+        response = input(
+            "\nDo you want to update this entry? [Y]/n "
+            ).lower().strip()
+        if response != 'n':
+            entry.save()
+            print("\nEntry has been updated!")
+            input("\nPress ENTER to continue to search results...")
+            display_entries(entries)
+        else:
+            print("\nEntry not saved!")
+            input("\nPress ENTER to continue to search results...")
+            display_entries(entries)
+
+
+def delete_entry(index, entries):
+    """Delette an entry."""
+    entry = entries[index]
+    clear_screen()
+    print("Delete Entry\n")
+    display_entry(entry)
+    user_input = input(
+        "\nAre you sure you want to delete entry: y/[N] ").lower().strip()
+
+    if user_input == 'y':
+        entry.delete_instance()
+        print("\nEntry has been deleted!")
+        input("\nPress ENTER to continue to Search Menu...")
+        search_entries()
+    else:
+        print("\nEntry not deleted!")
+        input("\nPress ENTER to continue to Search Menu...")
+        search_entries()
 
 
 def search_entries():
@@ -204,6 +326,17 @@ def quit_program():
     sys.exit()
 
 
+def display_entry(entry):
+    """Display a single entry."""
+    print("Date: {}\nEmployee Name: {}\nTask Name: {}\nMinutes: {}\nNotes: {}"
+        "".format(
+            convert_datetime_to_string(entry.date),
+            entry.employee_name,
+            entry.task_name,
+            entry.minutes,
+            entry.notes))
+
+
 def display_entries(entries):
     """Displays entries to the screen."""
     index = 0
@@ -213,8 +346,19 @@ def display_entries(entries):
         print_entries(index, entries)
 
         if len(entries) == 1:
-            input("\nPress ENTER to continue to Main Menu.")
-            menu_loop()
+            print("\n[E] - Edit entry\n"
+                  "[D] - Delete entry\n"
+                  "[Q] - Return to Main Menu")
+            user_input = input("\nSelect option from above: ").lower().strip()
+            if user_input == 'e':
+                edit_entry(index, entries)
+            elif user_input == 'd':
+                delete_entry(index, entries)
+            elif user_input == 'q':
+                menu_loop()
+            else:
+                input("\n{} is not a valid command! Please try again."
+                "".format(user_input))
 
         display_nav_options(index, entries)
 
@@ -229,6 +373,10 @@ def display_entries(entries):
         elif index == len(entries) - 1 and user_input == 'p':
             index -= 1
             clear_screen()
+        elif user_input == 'e':
+            edit_entry(index, entries)
+        elif user_input == 'd':
+            delete_entry(index, entries)
         elif user_input == 'q':
             menu_loop()
         else:
@@ -240,8 +388,10 @@ def display_nav_options(index, entries):
     """Displays a menu that let's the user page through the entries."""
     p = "[P] - Previous entry"
     n = "[N] - Next entry"
+    e = "[E] - Edit entry"
+    d = "[D] - Delete entry"
     q = "[Q] - Return to Main Menu"
-    menu = [p, n, q]
+    menu = [p, n, e, d, q]
 
     if index == 0:
         menu.remove(p)
@@ -261,7 +411,7 @@ def print_entries(index, entries, display=True):
     print("\n" + "=" * 50 + "\n")
     print("Date: {}\nEmployee Name: {}\nTask Name: {}\nMinutes: {}\nNotes: {}"
         "".format(
-            entries[index].date,
+            convert_datetime_to_string(entries[index].date),
             entries[index].employee_name,
             entries[index].task_name,
             entries[index].minutes,
@@ -294,6 +444,7 @@ main_menu = OrderedDict([
 search_menu = OrderedDict([
     ('e', find_by_employee),
     ('d', find_by_date),
+    ('r', find_by_date_range),
     ('k', find_by_keyword),
     ('q', menu_loop)
 ])
