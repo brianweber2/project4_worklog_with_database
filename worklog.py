@@ -68,14 +68,14 @@ def get_notes():
 
 def get_date():
     """
-    Prompt employee for date in the format of MM/DD/YYYY. Check if valid entty.
+    Prompt employee for date in the format of YYYY-MM-DD. Check if valid entty.
     """
-    date = input("Enter date of task in the format MM/DD/YYYY: ").strip()
+    date = input("Enter date of task in the format YYYY-MM-DD: ").strip()
     try:
-        datetime.strptime(date, "%m/%d/%Y")
+        datetime.strptime(date, "%Y-%m-%d")
     except ValueError:
         print("\nNot a valid date entry! Enter the date in the format "
-            "MM/DD/YYYY.\n")
+            "YYYY-MM-DD.\n")
         get_date()
     else:
         return date
@@ -102,7 +102,7 @@ def create_entry(entry):
 def get_user_entry():
     """Get user input for the data fields in the Entry model."""
     clear_screen()
-    date = get_date()
+    date = convert_string_to_datetime(get_date())
     employee_name = get_employee_name()
     task_name = get_task_name()
     minutes = get_time_spent()
@@ -222,47 +222,32 @@ def find_by_date_range():
         display_entries(entries)
     else:
         print("No matches between {} and {}.".format(
-            convert_datetime_to_string(start_date),
-            convert_datetime_to_string(end_date)))
+            start_date,
+            end_date))
         response = input("\nDo you want to search something else? Y/[n] ")
         if response.lower().strip() != 'y':
             return None
         else:
             clear_screen()
-            return search_entries()
+            search_entries()
     return entries
 
 
 def get_all_distinct_dates_list():
     """Find a distinct dates in the databse. Returns a list of strings."""
     dates = []
-    for entry in Entry.select().order_by(Entry.date.desc()):
+    entries = select_all_entries()
+    entries = entries.order_by(Entry.date.desc())
+    for entry in entries:
         date = entry.date
         if date not in dates:
             dates.append(date)
     return dates
 
 
-def convert_dates_string_to_datetime(entries):
-    """
-    Converts all dates from a list of entries from the database to datetime
-    objects.
-    """
-    for entry in entries:
-        entry.date = convert_string_to_datetime(entry.date)
-        entry.save()
-    return entries
-
-
-def convert_datetime_to_string(date):
-    """Converts a datetime object to a string."""
-    date_string = date.strftime("%m/%d/%Y")
-    return date_string
-
-
 def convert_string_to_datetime(date):
     """Converts a string to a datetime object."""
-    date_datetime = datetime.strptime(date, "%m/%d/%Y")
+    date_datetime = datetime.strptime(date, "%Y-%m-%d").date()
     return date_datetime
 
 
@@ -295,28 +280,52 @@ def edit_entry(index, entries):
     while True:
         clear_screen()
         if user_input == 't':
-            entry.task_name = get_task_name()
+            edit = edit_task_name(entry)
+            return edit
         elif user_input == 'd':
-            entry.date = get_date()
+            edit = edit_date(entry)
+            return edit
         elif user_input == 's':
-            entry.minutes = get_time_spent()
+            edit = edit_time_spent(entry)
+            return edit
         elif user_input == 'n':
-            entry.notes = get_notes()
+            edit = edit_notes(entry)
+            return edit
         else:
             input("\n{} is not a valid command! Please try again."
                 "".format(user_input))
-        response = input(
-            "\nDo you want to update this entry? [Y]/n "
-            ).lower().strip()
-        if response != 'n':
-            entry.save()
-            print("\nEntry has been updated!")
-            input("\nPress ENTER to continue to search results...")
-            display_entries(entries)
-        else:
-            print("\nEntry not saved!")
-            input("\nPress ENTER to continue to search results...")
-            display_entries(entries)
+
+
+def edit_task_name(entry):
+    """Edit a task name for an entry."""
+    entry.task_name = get_task_name()
+    entry.save()
+    input("Edit successful! Press ENTER to continue.")
+    return entry
+
+
+def edit_date(entry):
+    """Edit the date for an entry."""
+    entry.date = get_date()
+    entry.save()
+    input("Edit successful! Press ENTER to continue.")
+    return entry
+
+
+def edit_time_spent(entry):
+    """Edit the minutes for an entry."""
+    entry.minutes = get_time_spent()
+    entry.save()
+    input("Edit successful! Press ENTER to continue.")
+    return entry
+
+
+def edit_notes(entry):
+    """Edit the notes for an entry."""
+    entry.notes = get_notes()
+    entry.save()
+    input("Edit successful! Press ENTER to continue.")
+    return entry
 
 
 def delete_entry(index, entries):
@@ -331,12 +340,12 @@ def delete_entry(index, entries):
     if user_input == 'y':
         entry.delete_instance()
         print("\nEntry has been deleted!")
-        input("\nPress ENTER to continue to Search Menu...")
-        search_entries()
+        input("\nPress ENTER to continue.")
+        return None
     else:
         print("\nEntry not deleted!")
-        input("\nPress ENTER to continue to Search Menu...")
-        search_entries()
+        input("\nPress ENTER to continue to Main Menu.")
+        return menu_loop()
 
 
 def search_entries():
@@ -366,7 +375,7 @@ def display_entry(entry):
     """Display a single entry."""
     print("Date: {}\nEmployee Name: {}\nTask Name: {}\nMinutes: {}\nNotes: {}"
         "".format(
-            convert_datetime_to_string(entry.date),
+            entry.date,
             entry.employee_name,
             entry.task_name,
             entry.minutes,
@@ -382,7 +391,7 @@ def list_entries(entries, user_input):
         print("No matches found for {}!".format(user_input))
         response = input("\nDo you want to search something else? Y/[n] ")
         if response.lower().strip() != 'y':
-            return None
+            return menu_loop()
         else:
             clear_screen()
             return search_entries()
@@ -429,7 +438,7 @@ def display_entries(entries):
         elif user_input == 'd':
             return delete_entry(index, entries)
         elif user_input == 'q':
-            return None
+            return menu_loop()
         else:
             input("\n{} is not a valid command! Please try again."
                 "".format(user_input))
@@ -452,6 +461,7 @@ def display_nav_options(index, entries):
     print("\n")
     for option in menu:
         print(option)
+    return menu
 
 
 def print_entries(index, entries, display=True):
