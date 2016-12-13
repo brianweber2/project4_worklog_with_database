@@ -43,26 +43,22 @@ class WorkLogTests(unittest.TestCase):
 
 
     def test_get_employee_name(self):
-        with mock.patch('builtins.input',
+        with mock.patch('builtins.input', side_effect=["", "Brian Weber"],
             return_value=DATA["employee_name"]):
             assert worklog.get_employee_name() == DATA["employee_name"]
 
 
     def test_get_task_name(self):
-        with mock.patch('builtins.input',
+        with mock.patch('builtins.input', side_effect=["", "Surfing"],
             return_value=DATA["task_name"]):
             assert worklog.get_task_name() == DATA["task_name"]
 
 
     def test_get_time_spent(self):
-        with mock.patch('builtins.input',
+        with mock.patch('builtins.input', side_effect=["1s", 120],
             return_value=DATA["minutes"]):
-            assert worklog.get_time_spent() == DATA["minutes"]
-
-
-    def test_time_spent_not_int(self):
-        with mock.patch('builtins.input', return_value="number"):
             self.assertRaises(ValueError)
+            assert worklog.get_time_spent() == DATA["minutes"]
 
 
     def test_get_notes(self):
@@ -73,7 +69,9 @@ class WorkLogTests(unittest.TestCase):
 
     def test_get_date(self):
         with mock.patch('builtins.input',
+            side_effect=["12/25/2016", "2016-12-25"],
             return_value=DATA["date"]):
+            self.assertRaises(ValueError)
             assert worklog.get_date() == DATA["date"]
 
 
@@ -162,7 +160,8 @@ class WorkLogTests(unittest.TestCase):
             Entry.create(**DATA_name)
             entries = Entry.select()
 
-            with mock.patch('builtins.input', side_effect=["Brian Weber"]):
+            with mock.patch('builtins.input',
+                side_effect=["Brian", "", "Brian Weber"]):
                 test = worklog.check_employee_name_match(entries)
                 self.assertEqual(test.count(), 1)
 

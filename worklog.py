@@ -30,34 +30,37 @@ def clear_screen():
 
 def get_employee_name():
     """Prompt the employee for their name."""
-    employee_name = input("Enter employee name: ")
-    if len(employee_name) == 0:
-        print("\nYou must enter your name!\n")
-        get_employee_name()
-    else:
-        return employee_name
+    while True:
+        employee_name = input("Enter employee name: ")
+        if len(employee_name) == 0:
+            print("\nYou must enter your name!\n")
+            continue
+        else:
+            return employee_name
 
 
 def get_task_name():
     """Prompt the employee for the task name."""
-    task_name = input("Enter a task name: ")
-    if len(task_name) == 0:
-        print("\nYou must enter a task name!\n")
-        get_task_name()
-    else:
-        return task_name
+    while True:
+        task_name = input("Enter a task name: ")
+        if len(task_name) == 0:
+            print("\nYou must enter a task name!\n")
+            continue
+        else:
+            return task_name
 
 
 def get_time_spent():
     """Prompt the employee for the time spent on their task."""
-    minutes = input("Enter number of minutes spent working on the task: ")
-    try:
-        int(minutes)
-    except ValueError:
-        print("\nNot a valid time entry! Enter time as a whole integer.\n")
-        get_time_spent()
-    else:
-        return minutes
+    while True:
+        minutes = input("Enter number of minutes spent working on the task: ")
+        try:
+            int(minutes)
+        except ValueError:
+            print("\nNot a valid time entry! Enter time as a whole integer.\n")
+            continue
+        else:
+            return minutes
 
 
 def get_notes():
@@ -70,15 +73,16 @@ def get_date():
     """
     Prompt employee for date in the format of YYYY-MM-DD. Check if valid entty.
     """
-    date = input("Enter date of task in the format YYYY-MM-DD: ").strip()
-    try:
-        datetime.strptime(date, "%Y-%m-%d")
-    except ValueError:
-        print("\nNot a valid date entry! Enter the date in the format "
-            "YYYY-MM-DD.\n")
-        get_date()
-    else:
-        return date
+    while True:
+        date = input("Enter date of task in the format YYYY-MM-DD: ").strip()
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            print("\nNot a valid date entry! Enter the date in the format "
+                "YYYY-MM-DD.\n")
+            continue
+        else:
+            return date
 
 
 def display_temp_entry(entry):
@@ -203,34 +207,35 @@ def find_by_date():
 
 def find_by_date_range():
     """Search by date range"""
-    clear_screen()
-    print("Search by date range\n")
-    print("Start date")
-    start_date = get_date()
-    print("\nEnd date")
-    end_date = get_date()
+    while True:
+        clear_screen()
+        print("Search by date range\n")
+        print("Start date")
+        start_date = get_date()
+        print("\nEnd date")
+        end_date = get_date()
 
-    if end_date < start_date:
-        input("\nStart date has to come before the end date! "
-            "Press ENTER to continue...")
-        return find_by_date_range()
+        if end_date < start_date:
+            input("\nStart date has to come before the end date! "
+                "Press ENTER to continue...")
+            continue
 
-    entries = select_all_entries()
-    entries = entries.where(Entry.date >= start_date, Entry.date <= end_date)
-    clear_screen()
-    if entries:
-        display_entries(entries)
-    else:
-        print("No matches between {} and {}.".format(
-            start_date,
-            end_date))
-        response = input("\nDo you want to search something else? Y/[n] ")
-        if response.lower().strip() != 'y':
-            return None
+        entries = select_all_entries()
+        entries = entries.where(Entry.date >= start_date, Entry.date <= end_date)
+        clear_screen()
+        if entries:
+            display_entries(entries)
         else:
-            clear_screen()
-            search_entries()
-    return entries
+            print("No matches between {} and {}.".format(
+                start_date,
+                end_date))
+            response = input("\nDo you want to search something else? Y/[n] ")
+            if response.lower().strip() != 'y':
+                return None
+            else:
+                clear_screen()
+                search_entries()
+        return entries
 
 
 def get_all_distinct_dates_list():
