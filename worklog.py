@@ -194,7 +194,7 @@ def find_by_date():
     print("Search by Date\n")
     print("Here are the dates we have entries for: \n")
     for date in dates:
-        print(date)
+        print(convert_datetime_to_string(date))
     print("\n")
     user_input = get_date()
 
@@ -254,6 +254,12 @@ def convert_string_to_datetime(date):
     """Converts a string to a datetime object."""
     date_datetime = datetime.strptime(date, "%Y-%m-%d").date()
     return date_datetime
+
+
+def convert_datetime_to_string(date):
+    """Converts datetime object to a string."""
+    date = date.strftime("%Y-%m-%d")
+    return date
 
 
 def find_by_keyword():
@@ -477,7 +483,7 @@ def print_entries(index, entries, display=True):
     print("\n" + "=" * 50 + "\n")
     print("Date: {}\nEmployee Name: {}\nTask Name: {}\nMinutes: {}\nNotes: {}"
         "".format(
-            entries[index].date,
+            convert_datetime_to_string(entries[index].date),
             entries[index].employee_name,
             entries[index].task_name,
             entries[index].minutes,
